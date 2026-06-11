@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Case Study — Portfolio Deployment on AWS EC2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="deploymentusingec2.css" rel="stylesheet">
+<body>
+
+<nav>
+  <a href="index.html" class="nav-logo">S<span>.</span>Emmanuel</a>
+  <a href="index.html" class="nav-back">← Back to Portfolio</a>
+</nav>
+
+<!-- HERO -->
+<header class="hero">
+  <div class="hero-inner">
+    <div class="hero-eyebrow">Case Study · Cloud Engineering</div>
+    <h1 class="hero-title">Deploying a Portfolio on <span>AWS EC2</span><br>with Custom Domain & HTTPS</h1>
+    <p class="hero-subtitle">A real-world walkthrough of provisioning a Linux server, configuring Apache, connecting a custom domain via Namecheap DNS, and securing everything with a free Let's Encrypt SSL certificate — including every error hit along the way.</p>
+    <div class="hero-meta">
+      <div class="meta-item">
+        <div class="meta-label">Engineer</div>
+        <div class="meta-value">Sikiru Emmanuel</div>
+      </div>
+      <div class="meta-item">
+        <div class="meta-label">Duration</div>
+        <div class="meta-value">1 Day</div>
+      </div>
+      <div class="meta-item">
+        <div class="meta-label">Live URL</div>
+        <div class="meta-value">emmanuelcloud.space</div>
+      </div>
+      <div class="meta-item">
+        <div class="meta-label">Platform</div>
+        <div class="meta-value">AWS EC2 · Amazon Linux</div>
+      </div>
+      <div class="meta-item">
+        <div class="meta-label">Status</div>
+        <div class="meta-value live">✦ Live &amp; Secured</div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="page-wrap">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-heading">On This Page</div>
+    <ul class="sidebar-nav" id="sidenav">
+      <li><a href="#overview"  class="active"><span class="sidebar-num">00</span> Overview</a></li>
+      <li><a href="#step1"><span class="sidebar-num">01</span> Launch EC2</a></li>
+      <li><a href="#step2"><span class="sidebar-num">02</span> Install Apache</a></li>
+      <li><a href="#step3"><span class="sidebar-num">03</span> Deploy Files</a></li>
+      <li><a href="#step4"><span class="sidebar-num">04</span> Security Groups</a></li>
+      <li><a href="#step5"><span class="sidebar-num">05</span> Custom Domain</a></li>
+      <li><a href="#step6"><span class="sidebar-num">06</span> SSL / HTTPS</a></li>
+      <li><a href="#step7"><span class="sidebar-num">07</span> Troubleshooting</a></li>
+      <li><a href="#outcome"><span class="sidebar-num">08</span> Outcome</a></li>
+    </ul>
+    <div class="sidebar-divider"></div>
+    <div class="stack-title">Tech Stack</div>
+    <div class="stack-tags">
+      <span class="stag">AWS EC2</span>
+      <span class="stag">Amazon Linux</span>
+      <span class="stag">Apache httpd</span>
+      <span class="stag">Certbot</span>
+      <span class="stag">Let's Encrypt</span>
+      <span class="stag">Namecheap DNS</span>
+      <span class="stag">Elastic IP</span>
+      <span class="stag">HTML/CSS/JS</span>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="main">
+
+    <!-- 00 OVERVIEW -->
+    <section class="section reveal" id="overview">
+      <div class="ov-grid">
+        <div class="ov-card"><div class="ov-icon">☁️</div><div class="ov-label">Platform</div><div class="ov-val">AWS EC2</div></div>
+        <div class="ov-card"><div class="ov-icon">🌐</div><div class="ov-label">Web Server</div><div class="ov-val">Apache httpd</div></div>
+        <div class="ov-card"><div class="ov-icon">🔒</div><div class="ov-label">SSL</div><div class="ov-val">Let's Encrypt</div></div>
+      </div>
+
+      <p class="prose">This project documents the complete process of deploying a personal portfolio website on AWS infrastructure — from spinning up a cloud server to securing it with a custom domain and HTTPS certificate. The goal was to demonstrate real-world cloud engineering skills: <strong>server provisioning, web server configuration, DNS management, and SSL/TLS implementation.</strong></p>
+
+      <p class="prose">This is not a clean, step-by-step tutorial — it's a real deployment log, including every error that showed up and exactly how each one was fixed.</p>
+
+      <div class="arch">
+        <div><span class="aa">Browser</span> <span class="aa">──HTTPS──▶</span> <span class="ah">emmanuelcloud.space</span></div>
+        <div><span class="aa">              │</span></div>
+        <div><span class="aa">   Namecheap DNS </span><span class="aa">──A Record──▶</span> <span class="al">3.213.211.14 (Elastic IP)</span></div>
+        <div><span class="aa">              │</span></div>
+        <div><span class="aa">   AWS EC2 Instance</span> <span class="aa">──Port 443──▶</span> <span class="ah">Apache httpd</span></div>
+        <div><span class="aa">              │</span></div>
+        <div><span class="aa">   SSL Certificate</span> <span class="aa">──cert──▶</span> <span class="al">/var/www/html/index.html</span></div>
+      </div>
+    </section>
+    <div class="sec-divider"></div>
+
+    <!-- 01 LAUNCH EC2 -->
+    <section class="section reveal" id="step1">
+      <div class="step-bar">
+        <div class="step-num-badge">STEP 01</div>
+        <div><div class="step-title">Launch EC2 Instance</div><div class="step-sub">Provision a virtual server on AWS</div></div>
+      </div>
+
+      <p class="prose">An <strong>EC2 (Elastic Compute Cloud)</strong> instance was launched using the AWS Management Console. Amazon Linux 2023 was chosen — it's lightweight, well-supported, and optimised for AWS workloads.</p>
+
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Setting</th><th>Value</th></tr></thead>
+          <tbody>
+            <tr><td>AMI</td><td>Amazon Linux 2023</td></tr>
+            <tr><td>Instance Type</td><td>t2.micro (Free Tier)</td></tr>
+            <tr><td>Storage</td><td>8 GB gp3 EBS</td></tr>
+            <tr><td>Key Pair</td><td>Generated during setup</td></tr>
+            <tr><td>Region</td><td>us-east-1</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout info"><span class="ci">ℹ️</span><span><strong>Access method:</strong> EC2 Instance Connect was used to SSH directly from the AWS Console — no need to manage .pem key files locally.</span></div>
+    </section>
+    <div class="sec-divider"></div>
+
+    <!-- 02 INSTALL APACHE -->
+    <section class="section reveal" id="step2">
+      <div class="step-bar">
+        <div class="step-num-badge">STEP 02</div>
+        <div><div class="step-title">Install &amp; Configure Apache</div><div class="step-sub">Set up the web server on the instance</div></div>
+      </div>
+
+      <p class="prose">Apache HTTP Server (<strong>httpd</strong>) was installed and started to serve web content on port 80.</p>
+
+      <div class="code-block">
+        <div class="code-top"><span class="code-lang">bash — EC2 Terminal</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><span class="c"># Install Apache</span>
+<span class="k">sudo yum install</span> <span class="f">-y</span> httpd
+
+<span class="c"># Start the service</span>
+<span class="k">sudo systemctl start</span> httpd
+
+<span class="c"># Enable on boot</span>
+<span class="k">sudo systemctl enable</span> httpd
+
+<span class="c"># Verify it's running</span>
+<span class="k">sudo systemctl status</span> httpd</pre>
+      </div>
+
+      <div class="ps-wrap">
+        <div class="ps-card ps-error">
+          <div class="ps-label">❌ Problem</div>
+          <p>After running <code>systemctl enable httpd</code>, the output showed <strong>"preset is disabled"</strong> — meaning Apache was not registered to auto-start on reboot.</p>
+        </div>
+        <div class="ps-card ps-fix">
+          <div class="ps-label">✅ Fix</div>
+          <p>Ran <code>sudo systemctl enable httpd</code> explicitly again and confirmed with <code>sudo systemctl status httpd</code> which showed <strong>active (running)</strong>. The preset warning is cosmetic — the service still starts.</p>
+        </div>
+      </div>
+
+      <p class="prose" style="margin-top:1.25rem;">A VirtualHost configuration file was also created so Apache knows how to handle requests for the domain:</p>
+
+      <div class="code-block">
+        <div class="code-top"><span class="code-lang">bash</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><span class="k">sudo nano</span> /etc/httpd/conf.d/portfolio.conf</pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-top"><span class="code-lang">apache — portfolio.conf</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><span class="p">&lt;VirtualHost *:80&gt;</span>
+    <span class="f">ServerName</span>    <span class="s">emmanuelcloud.space</span>
+    <span class="f">ServerAlias</span>   <span class="s">www.emmanuelcloud.space</span>
+    <span class="f">DocumentRoot</span>  <span class="s">/var/www/html</span>
+
+    <span class="p">&lt;Directory /var/www/html&gt;</span>
+        <span class="f">AllowOverride</span> <span class="s">All</span>
+        <span class="f">Require all</span>   <span class="s">granted</span>
+    <span class="p">&lt;/Directory&gt;</span>
+
+    <span class="f">RewriteEngine</span> on
+    <span class="f">RewriteCond</span> %{HTTPS} off
+    <span class="f">RewriteRule</span> ^(.*)$ https://%{HTTP_HOST}$1 [R=301,L]
+<span class="p">&lt;/VirtualHost&gt;</span>
+
+<span class="p">&lt;VirtualHost *:443&gt;</span>
+    <span class="f">ServerName</span>            <span class="s">emmanuelcloud.space</span>
+    <span class="f">ServerAlias</span>           <span class="s">www.emmanuelcloud.space</span>
+    <span class="f">DocumentRoot</span>          <span class="s">/var/www/html</span>
+    <span class="f">SSLEngine</span>             on
+    <span class="f">SSLCertificateFile</span>    <span class="s">/etc/letsencrypt/live/emmanuelcloud.space/fullchain.pem</span>
+    <span class="f">SSLCertificateKeyFile</span> <span class="s">/etc/letsencrypt/live/emmanuelcloud.space/privkey.pem</span>
+<span class="p">&lt;/VirtualHost&gt;</span></pre>
+      </div>
+    </section>
+    <div class="sec-divider"></div>
+
+    <!-- 03 DEPLOY FILES -->
+    <section class="section reveal" id="step3">
+      <div class="step-bar">
+        <div class="step-num-badge">STEP 03</div>
+        <div><div class="step-title">Deploy Portfolio Files</div><div class="step-sub">Upload and serve the website content</div></div>
+      </div>
+
+      <p class="prose">The portfolio files were downloaded from GitHub using <code>wget</code> and extracted into Apache's web root directory at <strong>/var/www/html/</strong>.</p>
+
+      <div class="code-block">
+        <div class="code-top"><span class="code-lang">bash</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><span class="c"># Attempt 1 — failed with 404</span>
+<span class="k">wget</span> https://github.com/Hiccup21/Portfolio/archive/refs/heads/main.zip
+
+<span class="c"># Install unzip</span>
+<span class="k">sudo yum install</span> <span class="f">-y</span> unzip
+
+<span class="c"># Extract and move to web root</span>
+<span class="k">unzip</span> main.zip
+<span class="k">sudo mv</span> Portfolio-main/* /var/www/html/
+
+<span class="c"># Fix permissions</span>
+<span class="k">sudo chmod</span> 755 /var/www/html/
+<span class="k">sudo chmod</span> 644 /var/www/html/index.html</pre>
+      </div>
+
+      <div class="ps-wrap">
+        <div class="ps-card ps-error">
+          <div class="ps-label">❌ Problem 1 — GitHub 404</div>
+          <p>Running <code>wget</code> on the ZIP URL returned <strong>404 Not Found</strong>. The branch name <code>main</code> in the URL was wrong.</p>
+        </div>
+        <div class="ps-card ps-fix">
+          <div class="ps-label">✅ Fix</div>
+          <p>Opened the GitHub repo in a browser to check the actual branch name, then updated the URL with the correct branch name and re-ran <code>wget</code>.</p>
+        </div>
+      </div>
+
+      <div class="ps-wrap" style="margin-top:1rem;">
+        <div class="ps-card ps-error">
+          <div class="ps-label">❌ Problem 2 — 403 Forbidden</div>
+          <p>After moving files to <code>/var/www/html/</code>, visiting the public IP showed <strong>403 Forbidden</strong>. The HTML file was named <em>"Sikiru's portfolio.html"</em> — Apache couldn't find <code>index.html</code> to serve automatically.</p>
+        </div>
+        <div class="ps-card ps-fix">
+          <div class="ps-label">✅ Fix</div>
+          <p>Renamed the file to <code>index.html</code> using <code>sudo mv</code> and deleted the default Apache welcome page at <code>/etc/httpd/conf.d/welcome.conf</code>, then restarted Apache.</p>
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-top"><span class="code-lang">bash — rename & fix</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><span class="c"># Rename portfolio file to index.html</span>
+<span class="k">sudo mv</span> <span class="s">"/var/www/html/Sikiru's portfolio.html"</span> /var/www/html/index.html
+
+<span class="c"># Remove default Apache welcome page</span>
+<span class="k">sudo rm -f</span> /etc/httpd/conf.d/welcome.conf
+
+<span class="c"># Restart Apache</span>
+<span class="k">sudo systemctl restart</span> httpd</pre>
+      </div>
+    </section>
+    <div class="sec-divider"></div>
+
+    <!-- 04 SECURITY GROUPS -->
+    <section class="section reveal" id="step4">
+      <div class="step-bar">
+        <div class="step-num-badge">STEP 04</div>
+        <div><div class="step-title">Configure Security Groups</div><div class="step-sub">Open the right ports in AWS firewall</div></div>
+      </div>
+
+      <p class="prose">AWS Security Groups act as a virtual firewall. The following inbound rules were added to allow web traffic to reach the instance:</p>
+
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Type</th><th>Protocol</th><th>Port</th><th>Source</th><th>Purpose</th></tr></thead>
+          <tbody>
+            <tr><td>SSH</td><td>TCP</td><td>22</td><td>My IP</td><td>Terminal access</td></tr>
+            <tr><td>HTTP</td><td>TCP</td><td>80</td><td>0.0.0.0/0</td><td>Web traffic + Certbot challenge</td></tr>
+            <tr><td>HTTPS</td><td>TCP</td><td>443</td><td>0.0.0.0/0</td><td>Secure web traffic</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="ps-wrap">
+        <div class="ps-card ps-error">
+          <div class="ps-label">❌ Problem — ERR_CONNECTION_REFUSED</div>
+          <p>Even after opening port 80, the browser showed <strong>ERR_CONNECTION_REFUSED</strong>. Checking with <code>sudo ss -tlnp | grep :80</code> returned nothing — Apache wasn't binding to port 80 at all.</p>
+        </div>
+        <div class="ps-card ps-fix">
+          <div class="ps-label">✅ Fix</div>
+          <p>The VirtualHost config file <code>portfolio.conf</code> was missing. Once it was created with the correct <code>&lt;VirtualHost *:80&gt;</code> block and Apache restarted, port 80 started listening correctly.</p>
+        </div>
+      </div>
+
+      <div class="callout warn"><span class="ci">⚠️</span><span><strong>Important:</strong> Port 80 must stay open even after HTTPS is enabled — Let's Encrypt uses an HTTP challenge on port 80 to verify domain ownership during certificate issuance.</span></div>
+    </section>
+    <div class="sec-divider"></div>
+
+    <!-- 05 CUSTOM DOMAIN -->
+    <section class="section reveal" id="step5">
+      <div class="step-bar">
+        <div class="step-num-badge">STEP 05</div>
+        <div><div class="step-title">Custom Domain via Namecheap</div><div class="step-sub">Pointing emmanuelcloud.space to the EC2 instance</div></div>
+      </div>
+
+      <p class="prose">An <strong>Elastic IP</strong> was allocated and associated to the EC2 instance to ensure the public IP remains the same even after reboots. DNS A records were then added in Namecheap's Advanced DNS panel to point the domain to this IP.</p>
+
+      <div class="code-block">
+        <div class="code-top"><span class="code-lang">bash — verify public IP</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><span class="k">curl</span> ifconfig.me
+<span class="c"># Returns: 3.213.211.14</span></pre>
+      </div>
+
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Type</th><th>Host</th><th>Value</th><th>TTL</th></tr></thead>
+          <tbody>
+            <tr><td>A Record</td><td>@</td><td>3.213.211.14</td><td>Automatic</td></tr>
+            <tr><td>A Record</td><td>www</td><td>3.213.211.14</td><td>Automatic</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="ps-wrap">
+        <div class="ps-card ps-error">
+          <div class="ps-label">❌ Problem 1 — Couldn't delete Namecheap records</div>
+          <p>Some default Namecheap records (parking page, CNAME for www) could not be deleted directly. The delete button was greyed out for certain record types.</p>
+        </div>
+        <div class="ps-card ps-fix">
+          <div class="ps-label">✅ Fix</div>
+          <p>Instead of deleting, used the <strong>edit (pencil) icon</strong> to overwrite existing records with the new A record values. For the CNAME www conflict, changed its type to A Record first, then set the Elastic IP value.</p>
+        </div>
+      </div>
+
+      <div class="ps-wrap" style="margin-top:1rem;">
+        <div class="ps-card ps-error">
+          <div class="ps-label">❌ Problem 2 — Wrong IP in DNS</div>
+          <p>Certbot's verification failed with a <strong>connection timeout</strong> on IP <code>3.213.211.14</code> but the Namecheap A records were still pointing to the old default Namecheap IP, not the Elastic IP.</p>
+        </div>
+        <div class="ps-card ps-fix">
+          <div class="ps-label">✅ Fix</div>
+          <p>Ran <code>curl ifconfig.me</code> on the EC2 instance to confirm the actual Elastic IP (<code>3.213.211.14</code>), then updated both A records in Namecheap to this exact IP and waited for DNS to propagate.</p>
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-top"><span class="code-lang">bash — verify DNS propagation</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><span class="k">nslookup</span> emmanuelcloud.space
+
+<span class="c"># Expected output:</span>
+<span class="c"># Name:    emmanuelcloud.space</span>
+<span class="c"># Address: 3.213.211.14  ✅</span></pre>
+      </div>
+
+      <div class="callout info"><span class="ci">ℹ️</span><span>DNS changes can take up to 24 hours to propagate globally. Use <strong>dnschecker.org</strong> to monitor propagation across multiple regions in real time.</span></div>
+    </section>
+    <div class="sec-divider"></div>
+
+    <!-- 06 SSL -->
+    <section class="section reveal" id="step6">
+      <div class="step-bar">
+        <div class="step-num-badge">STEP 06</div>
+        <div><div class="step-title">SSL Certificate with Let's Encrypt</div><div class="step-sub">Securing the site with free HTTPS</div></div>
+      </div>
+
+      <p class="prose"><strong>Certbot</strong> was installed to obtain a free SSL/TLS certificate from Let's Encrypt and configure Apache to serve traffic securely over HTTPS.</p>
+
+      <div class="code-block">
+        <div class="code-top"><span class="code-lang">bash — install Certbot</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><span class="k">sudo yum install</span> <span class="f">-y</span> epel-release
+<span class="k">sudo yum install</span> <span class="f">-y</span> certbot python3-certbot-apache</pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-top"><span class="code-lang">bash — request certificate</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><span class="k">sudo certbot</span> <span class="f">--apache</span> \
+  <span class="f">-d</span> <span class="s">emmanuelcloud.space</span> \
+  <span class="f">-d</span> <span class="s">www.emmanuelcloud.space</span></pre>
+      </div>
+
+      <div class="ps-wrap">
+        <div class="ps-card ps-error">
+          <div class="ps-label">❌ Problem 1 — Certbot timeout</div>
+          <p>Certbot failed with: <em>"Fetching http://emmanuelcloud.space/.well-known/acme-challenge/…: Timeout during connect (likely firewall problem)"</em>. The Elastic IP wasn't properly associated to the instance at the time.</p>
+        </div>
+        <div class="ps-card ps-fix">
+          <div class="ps-label">✅ Fix</div>
+          <p>Went to <strong>EC2 → Elastic IPs</strong>, confirmed the IP was allocated, then used <strong>Actions → Associate</strong> to link it to the correct instance. Updated Namecheap DNS to match the new IP, waited for propagation, then re-ran Certbot.</p>
+        </div>
+      </div>
+
+      <div class="ps-wrap" style="margin-top:1rem;">
+        <div class="ps-card ps-error">
+          <div class="ps-label">❌ Problem 2 — No VirtualHost on port 80</div>
+          <p>Certbot returned: <em>"Unable to find a virtual host listening on port 80 which is currently needed for Certbot to prove to the CA that you control your domain."</em></p>
+        </div>
+        <div class="ps-card ps-fix">
+          <div class="ps-label">✅ Fix</div>
+          <p>Created <code>/etc/httpd/conf.d/portfolio.conf</code> with a proper <code>&lt;VirtualHost *:80&gt;</code> block including <code>ServerName</code> and <code>ServerAlias</code>, restarted Apache, then re-ran Certbot successfully.</p>
+        </div>
+      </div>
+
+      <div class="ps-wrap" style="margin-top:1rem;">
+        <div class="ps-card ps-error">
+          <div class="ps-label">❌ Problem 3 — VirtualHost conflict</div>
+          <p>During Certbot's auto-install step, it asked to select a VirtualHost and returned: <em>"The selected vhost would conflict with other HTTPS VirtualHosts within Apache. Could not install certificate."</em></p>
+        </div>
+        <div class="ps-card ps-fix">
+          <div class="ps-label">✅ Fix</div>
+          <p>Manually edited <code>portfolio.conf</code> to include both the port 80 and port 443 VirtualHost blocks with the SSL certificate paths hardcoded. Restarted Apache — HTTPS worked perfectly.</p>
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-top"><span class="code-lang">bash — auto-renewal check</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><span class="c"># Test renewal works correctly</span>
+<span class="k">sudo certbot renew</span> <span class="f">--dry-run</span>
+
+<span class="c"># Certbot sets up auto-renewal via systemd timer</span>
+<span class="c"># Certificate expires: 2026-09-08 — renews automatically</span></pre>
+      </div>
+
+      <div class="callout good"><span class="ci">✅</span><span>SSL certificate successfully issued and deployed. All HTTP traffic now automatically redirects to HTTPS via Apache's <code>RewriteRule</code>. The 🔒 padlock appears in the browser.</span></div>
+    </section>
+    <div class="sec-divider"></div>
+
+    <!-- 07 TROUBLESHOOTING -->
+    <section class="section reveal" id="step7">
+      <div class="step-bar">
+        <div class="step-num-badge">STEP 07</div>
+        <div><div class="step-title">Full Troubleshooting Log</div><div class="step-sub">Every error hit during this deployment and how each was resolved</div></div>
+      </div>
+
+      <p class="prose">The following is a complete record of all issues encountered, the exact error messages received, the diagnostic steps taken, and the final fixes applied.</p>
+
+      <!-- Error 1 -->
+      <div style="border:1px solid var(--grey-light); border-radius:8px; overflow:hidden; margin-bottom:1.25rem;">
+        <div style="background:#fef2f2; padding:0.9rem 1.25rem; border-bottom:1px solid var(--red-border); display:flex; align-items:center; gap:0.6rem;">
+          <span style="font-size:0.9rem;">🔴</span>
+          <strong style="font-size:0.85rem; color:var(--red-text);">Error #1 — GitHub ZIP returned 404 Not Found</strong>
+        </div>
+        <div style="padding:1.1rem 1.25rem; background:var(--white);">
+          <div class="code-block" style="margin-top:0;">
+            <div class="code-top"><span class="code-lang">terminal output</span></div>
+            <pre>--2026-06-07 05:29:13--  https://github.com/Hiccup21/Portfolio/archive/refs/heads/main.zip
+Resolving github.com... 140.82.113.3
+Connecting to github.com|140.82.113.3|:443... connected.
+HTTP request sent, awaiting response... <span style="color:#f87171;">404 Not Found</span>
+ERROR 404: Not Found.</pre>
+          </div>
+          <p class="prose"><strong>Cause:</strong> The branch was not named <code>main</code> in the GitHub repo — the URL was incorrect.</p>
+          <p class="prose"><strong>Fix:</strong> Opened the GitHub repo in a browser, identified the correct branch name, updated the <code>wget</code> URL, and re-ran the command successfully.</p>
+        </div>
+      </div>
+
+      <!-- Error 2 -->
+      <div style="border:1px solid var(--grey-light); border-radius:8px; overflow:hidden; margin-bottom:1.25rem;">
+        <div style="background:#fef2f2; padding:0.9rem 1.25rem; border-bottom:1px solid var(--red-border); display:flex; align-items:center; gap:0.6rem;">
+          <span style="font-size:0.9rem;">🔴</span>
+          <strong style="font-size:0.85rem; color:var(--red-text);">Error #2 — 403 Forbidden on public IP</strong>
+        </div>
+        <div style="padding:1.1rem 1.25rem; background:var(--white);">
+          <p class="prose"><strong>Cause:</strong> The portfolio HTML file was named <em>"Sikiru's portfolio.html"</em> — Apache couldn't serve it as the default page because it looks for <code>index.html</code>. Also, the default Apache welcome page at <code>/etc/httpd/conf.d/welcome.conf</code> was blocking custom content.</p>
+          <p class="prose"><strong>Fix:</strong> Renamed the file to <code>index.html</code> using <code>sudo mv</code>, removed <code>welcome.conf</code>, and restarted Apache.</p>
+        </div>
+      </div>
+
+      <!-- Error 3 -->
+      <div style="border:1px solid var(--grey-light); border-radius:8px; overflow:hidden; margin-bottom:1.25rem;">
+        <div style="background:#fef2f2; padding:0.9rem 1.25rem; border-bottom:1px solid var(--red-border); display:flex; align-items:center; gap:0.6rem;">
+          <span style="font-size:0.9rem;">🔴</span>
+          <strong style="font-size:0.85rem; color:var(--red-text);">Error #3 — ERR_CONNECTION_REFUSED in browser</strong>
+        </div>
+        <div style="padding:1.1rem 1.25rem; background:var(--white);">
+          <p class="prose"><strong>Cause:</strong> Apache was active but wasn't binding to port 80 because no VirtualHost config existed. Running <code>sudo ss -tlnp | grep :80</code> returned nothing.</p>
+          <p class="prose"><strong>Fix:</strong> Created <code>/etc/httpd/conf.d/portfolio.conf</code> with the correct VirtualHost block. After restarting Apache, <code>curl http://localhost</code> returned the portfolio HTML. The browser then loaded the site successfully.</p>
+        </div>
+      </div>
+
+      <!-- Error 4 -->
+      <div style="border:1px solid var(--grey-light); border-radius:8px; overflow:hidden; margin-bottom:1.25rem;">
+        <div style="background:#fef2f2; padding:0.9rem 1.25rem; border-bottom:1px solid var(--red-border); display:flex; align-items:center; gap:0.6rem;">
+          <span style="font-size:0.9rem;">🔴</span>
+          <strong style="font-size:0.85rem; color:var(--red-text);">Error #4 — Certbot domain verification timeout</strong>
+        </div>
+        <div style="padding:1.1rem 1.25rem; background:var(--white);">
+          <div class="code-block" style="margin-top:0;">
+            <div class="code-top"><span class="code-lang">certbot error</span></div>
+            <pre>Domain: emmanuelcloud.space
+Type:   connection
+Detail: 3.213.211.14: Fetching http://emmanuelcloud.space/.well-known/
+acme-challenge/R9h_Q4JE...: <span style="color:#f87171;">Timeout during connect (likely firewall problem)</span></pre>
+          </div>
+          <p class="prose"><strong>Cause:</strong> The Elastic IP (<code>3.213.211.14</code>) was allocated but not correctly associated to the EC2 instance. Running <code>curl ifconfig.me</code> returned nothing — the instance had no reachable public IP.</p>
+          <p class="prose"><strong>Fix:</strong> Went to <strong>EC2 → Elastic IPs → Actions → Associate Elastic IP address</strong>, selected the instance, confirmed the association. Updated the Namecheap A records to <code>3.213.211.14</code>. Verified with <code>nslookup emmanuelcloud.space</code> which returned the correct IP, then re-ran Certbot.</p>
+        </div>
+      </div>
+
+      <!-- Error 5 -->
+      <div style="border:1px solid var(--grey-light); border-radius:8px; overflow:hidden; margin-bottom:1.25rem;">
+        <div style="background:#fef2f2; padding:0.9rem 1.25rem; border-bottom:1px solid var(--red-border); display:flex; align-items:center; gap:0.6rem;">
+          <span style="font-size:0.9rem;">🔴</span>
+          <strong style="font-size:0.85rem; color:var(--red-text);">Error #5 — Certbot VirtualHost conflict, certificate not installed</strong>
+        </div>
+        <div style="padding:1.1rem 1.25rem; background:var(--white);">
+          <div class="code-block" style="margin-top:0;">
+            <div class="code-top"><span class="code-lang">certbot error</span></div>
+            <pre>Successfully received certificate.
+Certificate is saved at: /etc/letsencrypt/live/emmanuelcloud.space/fullchain.pem
+
+<span style="color:#f87171;">We were unable to find a vhost with a ServerName or Address of www.emmanuelcloud.space</span>
+The selected vhost would conflict with other HTTPS VirtualHosts.
+<span style="color:#f87171;">Could not install certificate</span></pre>
+          </div>
+          <p class="prose"><strong>Cause:</strong> Certbot saved the certificate successfully but couldn't auto-configure Apache because of conflicting VirtualHost definitions — the <code>ssl.conf</code> and <code>portfolio-le-ssl.conf</code> files clashed.</p>
+          <p class="prose"><strong>Fix:</strong> Manually edited <code>/etc/httpd/conf.d/portfolio.conf</code> to include both the port 80 redirect block and the full port 443 SSL block with the certificate paths pointing to <code>/etc/letsencrypt/live/emmanuelcloud.space/</code>. Restarted Apache — HTTPS worked immediately.</p>
+        </div>
+      </div>
+
+      <div class="callout good" style="margin-top:1.5rem;"><span class="ci">✅</span><span>After resolving all 5 errors, the site loaded correctly at <strong>https://emmanuelcloud.space</strong> with a valid SSL padlock.</span></div>
+    </section>
+    <div class="sec-divider"></div>
+
+    <!-- 08 OUTCOME -->
+    <section class="section reveal" id="outcome">
+      <div class="step-bar">
+        <div class="step-num-badge">OUTCOME</div>
+        <div><div class="step-title">Results &amp; Key Takeaways</div><div class="step-sub">What was achieved and what was learned</div></div>
+      </div>
+
+      <div class="outcome-grid">
+        <div class="oc"><div class="oc-icon">🌐</div><div><div class="oc-title">Live on the Internet</div><div class="oc-desc">Portfolio accessible globally at emmanuelcloud.space</div></div></div>
+        <div class="oc"><div class="oc-icon">🔒</div><div><div class="oc-title">HTTPS Secured</div><div class="oc-desc">Free SSL cert from Let's Encrypt, auto-renews every 90 days</div></div></div>
+        <div class="oc"><div class="oc-icon">⚡</div><div><div class="oc-title">Static Elastic IP</div><div class="oc-desc">IP address never changes even after instance restarts</div></div></div>
+        <div class="oc"><div class="oc-icon">🔁</div><div><div class="oc-title">HTTP → HTTPS Redirect</div><div class="oc-desc">All plain HTTP traffic auto-redirected to HTTPS via Apache RewriteRule</div></div></div>
+        <div class="oc"><div class="oc-icon">🏗️</div><div><div class="oc-title">Production-Ready Apache Config</div><div class="oc-desc">VirtualHost handles both redirect and SSL serving cleanly</div></div></div>
+        <div class="oc"><div class="oc-icon">🐛</div><div><div class="oc-title">5 Real Errors Debugged</div><div class="oc-desc">Every issue diagnosed and fixed from terminal output alone</div></div></div>
+      </div>
+
+      <p class="prose" style="margin-top:1.5rem;">This project demonstrates core cloud engineering competencies: <strong>infrastructure provisioning, web server administration, DNS management, network security, and SSL/TLS configuration</strong> — all on AWS. Every problem was diagnosed and resolved systematically using logs, terminal output, and AWS console checks, reflecting real-world DevOps problem-solving.</p>
+
+      <div class="callout good"><span class="ci">🚀</span><span>Final result: <strong>https://emmanuelcloud.space</strong> — fully live, secured with HTTPS, served from AWS EC2 with Apache, reachable via a custom domain configured through Namecheap DNS.</span></div>
+    </section>
+
+  </main>
+</div>
+
+<footer>
+  <p>© 2026 Sikiru Emmanuel <span>·</span> Cloud Engineering Case Study</p>
+  <a rel="noopener" href="https://emmanuelcloud.space" target="_blank" class="live-btn">View Live Site ↗</a>
+</footer>
+
+<script src="deploymentusingec2.js"></script>
+</body>
+</html>
